@@ -1,0 +1,89 @@
+  setDT(comision)
+setDT(venta)
+
+data_comision <- melt.data.table(comision, id.vars = c("EMPRESAS"))
+#data_comision[, tipo := "comision"]
+names(data_comision)[3] <- "comision"
+data_venta <- melt.data.table(venta, id.vars = "EMPRESAS")
+#data_venta[, tipo := "comision"]
+names(data_venta)[3] <- "venta"
+
+data_total <- merge.data.table(data_comision, data_venta, by = c("EMPRESAS","variable" ))
+
+data_total[, variable := as.character(variable)]
+data_total[, variable := as.numeric(variable)]
+data_total[, variable := convertToDate(variable)]
+
+data_total <- data_total[!(is.na(variable) == TRUE) ]
+data_total[, mes := as.factor(month(variable))]
+
+data_total %>% 
+  ggplot() + 
+  geom_col(aes(x= mes, y = comision, fill = EMPRESAS), position = "dodge")+
+  geom_line(aes(x= mes, y = venta/15000000, group = EMPRESAS), size = 1, color = "black") + 
+  geom_text(aes(label = scales::comma(round(venta/1000,0), suffix = "K"), y = venta/15000000, x = mes), vjust = -1.5)+
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1),
+                     name = "Porcentaje de comisión",
+                     sec.axis = sec_axis(trans = ~.*15000000, name = "Venta por POS",
+                                         labels = scales::comma_format(scale = 1/1000,suffix = "K"),
+                                         )) +
+  facet_wrap(.~ EMPRESAS)+
+  theme(text = element_text(size = 15))+
+  xlab("")
+  
+  
+
+data_total %>% 
+  filter(comision >0) %>% 
+  ggplot() + 
+  geom_col(aes(x= mes, y = venta/15000000, fill = EMPRESAS)) + 
+  geom_line(aes(x= mes, y = comision, group = EMPRESAS), size = 1, color = "black")+
+  geom_text(aes(label = scales::percent(comision, accuracy = 0.01), y = comision, x = mes), vjust = 1.5, check_overlap = TRUE)+
+  geom_text(aes(label = scales::comma(round(venta/1000,0), suffix = "K"), y = venta/15000000, x = mes), check_overlap = TRUE)+
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1),
+                     name = "Porcentaje de comisión POS",
+                     sec.axis = sec_axis(trans = ~.*15000000, name = "Venta por POS",
+                                         labels = scales::comma_format(scale = 1/1000,suffix = "K"),
+                     )) +
+  facet_wrap(.~ EMPRESAS)+
+  theme(text = element_text(size = 15))+
+  xlab("") + ggtitle("Comisión y venta por POS y por razón social")
+  
+  
+  
+  matik_mes %>% 
+  ggplot(aes(x = month, y = porcentaje, group = 1, label = scales::percent(porcentaje, accuracy = 0.01) )) + 
+  geom_point() + geom_line() + geom_text(vjust = 2)+ 
+  theme(axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1),
+        axis.text = element_text(size = 15)
+        )+
+  scale_y_continuous(labels = scales::percent) + 
+  labs(title = "Comisión Euro Matik", y ="", x = "")  
+
+games_mes %>% 
+  ggplot(aes(x = month, y = porcentaje, group = 1, label = scales::percent(porcentaje, accuracy = 0.01) )) + 
+  geom_point() + geom_line() + geom_text(vjust = 2)+ 
+  theme(axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1),
+        axis.text = element_text(size = 15)) +
+  scale_y_continuous(labels = scales::percent) + 
+  labs(title = "Comisión Euro Games", y ="", x = "")  
+
+games_tipopago %>% 
+  ggplot(aes(x = month, y = venta, fill = `TIPO DE CAPTURA`)) +
+  geom_col(position = "fill")+
+  geom_text(aes(label = scales::percent(frac, accuracy = 0.01)), check_overlap = TRUE, position = position_fill(vjust = 0.5))+
+  theme(axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1),
+        axis.text = element_text(size = 15)) +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title = "Estructura de Pagos - Euro Games", y ="", x = "") 
+    
+matik_tipopago %>% 
+  ggplot(aes(x = month, y = venta, fill = `TIPO DE CAPTURA`)) +
+  geom_col(position = "fill")+
+  geom_text(aes(label = scales::percent(frac, accuracy = 0.01)), check_overlap = TRUE, position = position_fill(vjust = 0.5))+
+  theme(axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1),
+        axis.text = element_text(size = 15)) +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title = "Estructura de Pagos - Euro Matik", y ="", x = "") 
+
+d
